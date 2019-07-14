@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mlflow
+  name: mlflow
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5000
+  selector:
+    app: mlflow
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: mlflow
+  name: mlflow-nodeport
+spec:
+  type: NodePort
+  ports:
+  - port: 5000
+    nodePort: 30005
+  selector:
+    app: mlflow
