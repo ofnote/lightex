@@ -34,7 +34,7 @@ Learn more about the **anatomy** of a ML experimentation framework [here](docs/a
 
 Assume we have an existing `train` project: run trainer with 
 
-> `train.py --data-dir ./data —lr 0.1 —hidden_dim 512` 
+> `train.py --data-dir ./data —-lr 0.1 -—hidden_dim 512` 
 
 First, initialize the project. This creates files `config.py` and `run_expts.py` in the current directory.
 
@@ -50,8 +50,8 @@ The file `config.py` contains pre-defined dataclasses for specifying *named* exp
 @dataclass
 class Config:
     er: Resources 					#(Logger, Storage resources)
-    hp: HP 									#(hyper-parameters of model, training)
-    run: Run 								#(run-time config)
+    hp: HP 							#(Hyper-parameters of model, training)
+    run: Run 						#(Run-time config)
 
     def get_experiments(self): #required: generate a list of experiments to run
         expts = [Experiment(er=self.er, hp=self.hp, run=self.run)]
@@ -72,6 +72,7 @@ Once config named `C1` is defined, run your experiments as follows:
 
 > python run_expts.py -c C1
 
+That's it!
 
 #### Modify Experiment Parameters, Experiment Groups
 
@@ -102,7 +103,7 @@ logger.log('trains', ltype='hpdict', value={'alpha': alpha, 'l1_ratio': l1_ratio
 logger.log('mlflow', ltype='scalardict', value={'mae': mae, 'rmse': rmse, 'r2': r2}, step=1)
 # log to all
 logger.log('*', ltype='scalardict', value={'mae': mae, 'rmse': rmse, 'r2': r2}, step=3)
-# log scalars and tensors, if supported by logger backend
+# log scalars and tensors, if supported by the logger backend
 logger.log('trains', ltype='1d', name='W1', value=Tensor(..), histogram=True, step=4)
 logger.end_run()
 ```
@@ -186,7 +187,7 @@ Python > 3.6 (require `dataclasses`, included during install).
 
 ### References
 
-- Loggers: [trains](https://github.com/allegroai/trains), [Trixi](https://github.com/MIC-DKFZ/trixi), [ml_logger](https://github.com/episodeyang/ml_logger)
+- Loggers: sacred, [trains](https://github.com/allegroai/trains), [Trixi](https://github.com/MIC-DKFZ/trixi), [ml_logger](https://github.com/episodeyang/ml_logger)
 
 - Motivating Dataclasses [intro](https://blog.jetbrains.com/pycharm/2018/04/python-37-introducing-data-class/), [how-different](https://stackoverflow.com/questions/47955263/what-are-data-classes-and-how-are-they-different-from-common-classes)
 
