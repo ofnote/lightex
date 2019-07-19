@@ -187,7 +187,9 @@ Python > 3.6 (require `dataclasses`, included during install).
 
 ### References
 
-- Loggers: sacred, [trains](https://github.com/allegroai/trains), [Trixi](https://github.com/MIC-DKFZ/trixi), [ml_logger](https://github.com/episodeyang/ml_logger)
+- ML Experiment Frameworks: [kubeflow](https://github.com/kubeflow/kubeflow), [mlflow](https://www.mlflow.org/docs/latest/index.html), [polyaxon](https://polyaxon.com/), ...
+
+- Loggers: [sacred](https://sacred.readthedocs.io/en/latest/index.html), [trains](https://github.com/allegroai/trains), [Trixi](https://github.com/MIC-DKFZ/trixi), [ml_logger](https://github.com/episodeyang/ml_logger)
 
 - Motivating Dataclasses [intro](https://blog.jetbrains.com/pycharm/2018/04/python-37-introducing-data-class/), [how-different](https://stackoverflow.com/questions/47955263/what-are-data-classes-and-how-are-they-different-from-common-classes)
 
