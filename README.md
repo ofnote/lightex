@@ -14,7 +14,7 @@ Unlike most experiment frameworks, `LightEx`sports a modular, and highly configu
 * **namedconf**:  python `dataclass` based flexible and *unified* configuration specification for jobs, parameters and model architectures. Config instances are *named* and can be *locally modified*.
 * **qviz**: query, compare and visualize your experiment results.
 
-The run environment and parameters for your experiments are specified using a config file `config.py` in your project directory. Modify, inherit, and create new *named* config instances, on-the-fly, as you perform a series of experiments. 
+The run environment and parameters for your experiments are specified using a config file `lxconfig.py` in your project directory. Modify, inherit, and create new *named* config instances, on-the-fly, as you perform a series of experiments. 
 
 Learn more about the **anatomy** of a ML experimentation framework [here](docs/anatomy.md).
 
@@ -39,11 +39,11 @@ Assume we have an existing `train` project: run trainer with
 
 > `train.py --data-dir ./data —-lr 0.1 -—hidden_dim 512` 
 
-First, initialize the project. This creates files `config.py` and `run_expts.py` in the current directory.
+First, initialize the project. This creates files `lxconfig.py` and `run_expts.py` in the current directory.
 
 > `lx—init`                               
 
-The file `config.py` contains pre-defined dataclasses for specifying *named* experiment configs.
+The file `lxconfig.py` contains pre-defined dataclasses for specifying *named* experiment configs.
 
 * The main (controller) class `Config`, contains three fields: `er` , `hp` and `run` (see below). 
 * `Config` also includes a `get_experiments` function, which generates a list of experiment configs to be executed by the dispatcher. See [config.md](docs/config.md) for full description of the defined dataclasses.
@@ -88,7 +88,7 @@ C2 = replace(C1, hp=H2) #inherit er=R1 and run=Ru1
 
 > python run_expts.py -c C2
 
-To specify and run **experiment groups**, see `HPGroup` in [scripts/config.py](scripts/config.py) .
+To specify and run **experiment groups**, see `HPGroup` in [scripts/lxconfig.py](scripts/lxconfig.py) .
 
 **Note**: Although LightEx pre-defines the dataclass hierarchy, it allows the developer plenty of flexibility in defining the individual fields of classes, in particular, the fields of the `HP` class. 
 
@@ -164,7 +164,7 @@ Create a shared NFS on your nodes. Switch storage config to the NFS partition. S
 
 In summary, `LightEx` involves the following **one-time setup**:
 
-- config values in `config.py`
+- config values in `lxconfig.py`
 - Setup backend logger servers (only the ones required). Instructions [here](backend/). (Optional)
 - Update logging calls in your code to call `mulogger` API. (Optional)
 - Dockerfile for your project, if you want to use containers for dispatch. (Optional)

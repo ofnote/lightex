@@ -67,15 +67,15 @@ def load_config(config_dir, config_name, update_args=None):
     sys.path.append(config_dir)
 
     from pathlib import Path
-    config_file = Path(config_dir) / 'config.py'
+    config_file = Path(config_dir) / 'lxconfig.py'
     if not config_file.is_file():
-        raise ValueError(f'Unable to find file "config.py" in directory: {config_dir}.'
-                        f'Please specify your experiment configs in "config.py" in {config_dir}.')
+        raise ValueError(f'Unable to find file "lxconfig.py" in directory: {config_dir}.'
+                        f'Please specify your experiment configs in "lxconfig.py" in {config_dir}.')
     
     try:
         import config as M
     except:
-        raise ValueError('Unable to load experiment configs from file "config.py"')
+        raise ValueError('Unable to load experiment configs from file "lxconfig.py"')
         
     C = getattr(M, config_name)
 

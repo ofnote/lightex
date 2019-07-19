@@ -8,7 +8,7 @@ from pathlib import Path
 def task_init():
     print ('do task init')
     file_parent = Path(__file__).resolve().parent
-    config_file = file_parent / 'config.py' 
+    config_file = file_parent / 'lxconfig.py' 
     run_file = file_parent / 'run_expts.py'
 
     cwd = Path.cwd()
