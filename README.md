@@ -1,4 +1,4 @@
-##LightEx
+## LightEx
 
 `LightEx` is a lightweight experiment framework to create, monitor and record your machine learning experiments. Targeted towards individual data scientists, researchers, small teams and, in general, resource-constrained experimentation. Compatible with all machine-learning frameworks.
 
@@ -26,11 +26,11 @@ Learn more about the **anatomy** of a ML experimentation framework [here](docs/a
   * a neural architecture search over multiple architectures in parallel.
     
 
-###Installation
+### Installation
 
 >  pip install -U lightex
 
-###Quick Start
+### Quick Start
 
 Assume we have an existing `train` project: run trainer with 
 
@@ -73,10 +73,7 @@ Once config named `C1` is defined, run your experiments as follows:
 > python run_expts.py -c C1
 
 
-
-**Modify Experiment Parameters, Experiment Groups**
-
-------
+#### Modify Experiment Parameters, Experiment Groups
 
 Create a new `HP` instance and replace it in `C1` to create a new `Config`. Recursive replace also supported.
 
@@ -91,9 +88,7 @@ To specify and run **experiment groups**, see `HPGroup` in [scripts/config.py](s
 
 **Note**: Although LightEx pre-defines the dataclass hierarchy, it allows the developer plenty of flexibility in defining the individual fields of classes, in particular, the fields of the `HP` class. 
 
-**Adding Logging to your Code**
-
-------
+#### Adding Logging to your Code
 
 Use the unified `MultiLogger` [API](lightex/mulogger).
 
@@ -125,13 +120,10 @@ writer = logger.writer
 ```
 
 
-
 **Note**: Except for changes in logging, no changes are required in your existing code. Easily go back to the earlier ways of experiment management.
 
 
-**Switch to Docker**
-
-------
+#### Switch to Docker
 
 Add a `Dockerfile` to your project which builds the runtime environment with all the project dependencies. Update the `Build` instance inside `Resources` config. See [examples/sklearn](examples/sklearn), for example.
 
