@@ -1,3 +1,6 @@
+![experimental](https://img.shields.io/badge/stability-experimental-orange.svg)
+
+
 ## LightEx
 
 `LightEx` is a lightweight experiment framework to create, monitor and record your machine learning experiments. Targeted towards individual data scientists, researchers, small teams and, in general, resource-constrained experimentation. Compatible with all machine-learning frameworks.
