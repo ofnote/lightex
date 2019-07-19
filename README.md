@@ -1,98 +1,232 @@
-### LightEx
+##LightEx
 
-`LightEx` is a lightweight experiment framework to create, monitor and record your machine learning experiments. Targeted towards individual data scientists, researchers, small teams and, in general, resource-constrained experimentation.
+`LightEx` is a lightweight experiment framework to create, monitor and record your machine learning experiments. Targeted towards individual data scientists, researchers, small teams and, in general, resource-constrained experimentation. Compatible with all machine-learning frameworks.
 
-#### Yet another experiment framework?
-Systematic experimentation tools are essential for a data scientist. Unfortunately, many existing tools (`kubeflow`, `mlflow`, `polyaxon`) are too monolithic, kubernetes-first, cloud-first, target very diverse audiences and hence spread too thin, and yet lack important dev-friendly features. Other tools cater only to a specific task , e.g., `tensorboard` only handles log recording and visualization. Also, contrasting different experiment frameworks is hard: there is no standardized expt-management architecture for machine learning and most open-source frameworks are undergoing a process of adhoc requirements discovery. 
+**Project Status:** Alpha
+
+Unlike most experiment frameworks, `LightEx`sports a modular, and highly configurable design:
+
+* **dispatcher**: run experiments using `process`,`docker` containers or `kubernetes` pods. Switch between modes seamlessly by minor changes to config.
+* **mulogger**: log metrics and artifacts to multiple logger backends, using an *unified* API. Supports `mlflow`, `tensorboard` and `trains` — add new loggers easily as *plugins*.
+* **namedconf**:  python `dataclass` based flexible and *unified* configuration specification for jobs, parameters and model architectures. Config instances are *named* and can be *locally modified*.
+* **qviz**: query, compare and visualize your experiment results.
+
+The run environment and parameters for your experiments are specified using a config file `config.py` in your project directory. Modify, inherit, and create new *named* config instances, on-the-fly, as you perform a series of experiments. 
+
+Learn more about the **anatomy** of a ML experimentation framework [here](docs/anatomy.md).
+
+#### Benefits
+
+ Start with a basic `train` or `eval` project. In a few minutes,
+
+* introduce systematic logging (multiple loggers) and visualization to your project
+* go from running a single experiment to multiple parameterized experiments, e.g.,
+  * multiple training runs over a set of hyper-parameters.
+  * multiple `efficient-net` or `bert` train or eval runs.
+  * a neural architecture search over multiple architectures in parallel.
+    
+
+###Installation
+
+>  pip install -U lightex
+
+###Quick Start
+
+Assume we have an existing `train` project: run trainer with 
+
+> `train.py --data-dir ./data —lr 0.1 —hidden_dim 512` 
+
+First, initialize the project. This creates files `config.py` and `run_expts.py` in the current directory.
+
+> `lx—init`                               
+
+The file `config.py` contains pre-defined dataclasses for specifying *named* experiment configs.
+
+* The main (controller) class `Config`, contains three fields: `er` , `hp` and `run` (see below). 
+* `Config` also includes a `get_experiments` function, which generates a list of experiment configs to be executed by the dispatcher. See [config.md](docs/config.md) for full description of the defined dataclasses.
+
+```python
+
+@dataclass
+class Config:
+    er: Resources 					#(Logger, Storage resources)
+    hp: HP 									#(hyper-parameters of model, training)
+    run: Run 								#(run-time config)
+
+    def get_experiments(self): #required: generate a list of experiments to run
+        expts = [Experiment(er=self.er, hp=self.hp, run=self.run)]
+        return expts
+```
+
+Instantiate class `HP` with actual parameters, and class `Run` to mimic the command with placeholders.
+
+```python
+cmd="python train.py --data-dir {{run.data_dir}} --lr {{hp.lr}} --hidden_dim {{hp.hidden_dim}}" #placeholders refer to fields of Experiment instance
+Ru1 = Run(cmd=cmd, experiment_name="find_hp")
+H2 = HP(lr=1e-2, hidden_dim=512)
+
+C1 = Config(er=R1, hp=H1, run=Ru1) #er defined elsewhere
+```
+
+Once config named `C1` is defined, run your experiments as follows:
+
+> python run_expts.py -c C1
 
 
-Our USP:
 
-* We study the [anatomy of a ML experimentation framework](docs/anatomy.md). Identify principal components: flexible configuration, job dispatcher, multi-logger, log visualization and querying, storage virtualization.
-* This informs the modular design of `LightEx`: all the key components are included and integrated via a flexible configuration manager. By design, the components are *decoupled*, *swappable* and can be developed independently. Codebase is small, easily navigable (hopefully stays that way).
-* We don't re-invent the wheel. To create experiments, 
-  * the job dispatcher builds over the subprocess/docker/kubernetes ecosystem, 
-  * we reuse existing loggers and visualizers (`mlflow` is our primary log tracker, support `tensorboard`and extensible via *plugins*), and 
-  * employ python `dataclass` based flexible and *unified* configuration specification for jobs, parameters and model architectures. Config instances are *named* and can be *locally modified*.
+**Modify Experiment Parameters, Experiment Groups**
 
-`LightEx` setup cost is low for your existing projects:
+------
 
-- Add or update your logging code using `LightEx`'s `multi_logger` API. 
-- Update config instances in `config_expts.py` (mainly, the hyperparameter class `HP` and run command template `cmd`). Your `argparse` based code requires no other changes.
+Create a new `HP` instance and replace it in `C1` to create a new `Config`. Recursive replace also supported.
+
+```python
+H2 = HP(lr=1e-3, hidden_dim=1024)
+C2 = replace(C1, hp=H2) #inherit er=R1 and run=Ru1
+```
+
+> python run_expts.py -c C2
+
+To specify and run **experiment groups**, see `HPGroup` in [scripts/config.py](scripts/config.py) .
+
+**Note**: Although LightEx pre-defines the dataclass hierarchy, it allows the developer plenty of flexibility in defining the individual fields of classes, in particular, the fields of the `HP` class. 
+
+**Adding Logging to your Code**
+
+------
+
+Use the unified `MultiLogger` [API](lightex/mulogger).
+
+```python
+from lightex.mulogger import MLFlowLogger, MultiLogger, PytorchTBLogger
+logger = MultiLogger(['mlflow', 'trains'])
+logger.start_run()
+# log to trains only
+logger.log('trains', ltype='hpdict', value={'alpha': alpha, 'l1_ratio': l1_ratio})
+# log to mlflow only
+logger.log('mlflow', ltype='scalardict', value={'mae': mae, 'rmse': rmse, 'r2': r2}, step=1)
+# log to all
+logger.log('*', ltype='scalardict', value={'mae': mae, 'rmse': rmse, 'r2': r2}, step=3)
+# log scalars and tensors, if supported by logger backend
+logger.log('trains', ltype='1d', name='W1', value=Tensor(..), histogram=True, step=4)
+logger.end_run()
+```
+
+Or, use one of the existing loggers' API directly.
+
+```python
+logger = MLFlowLogger()
+mlflow = logger.mlflow
+# call mlflow API
+
+logger = PytorchTBLogger()
+writer = logger.writer
+#call tensorboard's API
+```
 
 
-#### Getting Started :  Adopting LightEx Incrementally
 
-* `pip install lightex`
+**Note**: Except for changes in logging, no changes are required in your existing code. Easily go back to the earlier ways of experiment management.
 
-We start with the Level-0 user, who runs experiments adhoc style: little or no configuration organization and tracking, naive log viewing (terminal or unorganized files), logging to tensorboard sparingly. At this stage, it is hard to run organize, keep track of, record, reuse multiple experiments. Move to Level 1.
 
-- Level 1 User
-  - `lx init` in your project directory. Creates `config.py` and `run_expts.py`
-  - setup a logger backend (default is `mlflow`). See [backend](backend/)
-  - LightEx provides a small set of pre-defined, nested configuration classes (`config.py`) to serve the most common ML experimentation needs. Update the fields of `config.py` based on your project.
-    - move your argparse parameters to dataclasses in `config.py`
-    - reuse run, build, resources config pre-defined in lightex (most of these only require filling with right values — see [config](docs/config.md) and [examples](examples/))
-    - define a *named* config instance variable (say, `C1`) in `config.py` for one/multiple experiments
-  - `run_expts.py —config C1 —engine process` to execute experiments defined as `C1` 
-    - No other changes to your source code
-  - use [mlflow UI](http://localhost:5000) to view track your runs. Experiment logs are stored in separate run directories.
-- Level 2 - Better Logging, Comparison of runs.
-  - use [mulogger](mulogger/) to log to mlflow and tensorflow simultaneously. Example [here](examples/sklearn/train.py#).
-  - add your own logger [plugins](plugins/) (see [trains](plugins/trains) example), which follow a common logger API.
-  - compare and visualize logs [under dev]
-- Level 3 - you want to encapsulate the run environment and dependencies, scalable deployment 
-  - include `Dockerfile` for your project, with all dependencies. See [examples](examples/pytorch-mnist)
-  - update `build` and `run` configs in `config.py`
-    - code and data are mounted into container from host paths
-  - `run_expts.py -c C1 -e process` to execute experiments using docker containers. No other changes required.
-  - switch engine to process mode for debugging, docker for deployment.
-- Level 4 - you have a multi-node setup or want to be cloud-ready or simply prefer k8s [Under development] 
-  - start storage virtualization server (e.g., nfs), (micro)k8s cluster
-  - update `config.py` (build points to registry)
-  - `run_expts.py —config C1 —e swarm` or `run_expts.py —config C1 —e k8s`
-- Level 5 - diverse distributed storage options (S3, ceph) [Planned]
+**Switch to Docker**
+
+------
+
+Add a `Dockerfile` to your project which builds the runtime environment with all the project dependencies. Update the `Build` instance inside `Resources` config. See [examples/sklearn](examples/sklearn), for example.
+
+> python run_expts.py -c C2 -e docker
+
+Both your code and data are mounted on the container (no copying involved) — minimal disruption in your dev cycle.
+
+#### Advanced Features
+
+More advanced features are in development stage.
+
+**Modifying, Adding Loggers**
+
+```python
+Lm = MLFlowConfig(client_in_cluster=False, port=5000)
+L = LoggerConfig(mlflow=Lm)
+from lightex.mulogger.trains_logger import TrainsConfig
+L.register_logger('trains', TrainsConfig())
+
+R1 = Resources(build=..., storage=..., ctr=..., loggers=L)
+```
+
+More loggers and a better plugin system being developed.
+
+**Running Experiments on multiple nodes / servers**
+
+If you've setup a docker `swarm` or `kubernetes` cluster, few changes to the existing config instance allow changing the underlying experiment dispatcher.
+
+We need to virtualize code (by adding to Dockerfile) and storage.
+
+Create a shared NFS on your nodes. Switch storage config to the NFS partition. Setup scripts will be added.
+
+**Setup Summary**
+
+In summary, `LightEx` involves the following **one-time setup**:
+
+- config values in `config.py`
+- Setup backend logger servers (only the ones required). Instructions [here](backend/). (Optional)
+- Update logging calls in your code to call `mulogger` API. (Optional)
+- Dockerfile for your project, if you want to use containers for dispatch. (Optional)
+
+While `LightEx` is quick to start with, it is advisable to spend some time understanding the [config schema](namedconf/config.py)
 
 
 
 ### Dependencies, Directory Structure
 
-Python > 3.6 (require `dataclasses`). 
+Python > 3.6 (require `dataclasses`, included during install). 
+
+
 
 ### Design Challenges
 
-* A lot of an expt manager is about setting up and propagating a giant web of configuration variables. 
-  * No optimal choice here: `json`,`yaml`,`jsonnet`— all formats have issues. 
-  * Using `dataclass`es, we can write complex config specs, with built-in inheritance and ability to do *local updates*. Tiny bit of a learning curve here, but we gain a lot of flexibility.
-* Read more on challenges [here](docs/anatomy.md).
-
+- A significant portion of experiment manager design is about setting up and propagating a giant web of configuration variables. 
+  - No optimal choice here: `json`,`yaml`,`jsonnet`— all formats have issues. 
+  - Using `dataclass`es, we can write complex config specs, with built-in inheritance and ability to do *local updates*. Tiny bit of a learning curve here, bound to python, but we gain a lot of flexibility.
+- A unified `mulogger` API to abstract away the API of multiple logging backends.
+- Designing multiple dispatchers with similar API, enabling containers and varying storage options.
+- Read more on challenges [here](docs/anatomy.md).
 
 ### References
 
-* Loggers: [trains](https://github.com/allegroai/trains), [Trixi](https://github.com/MIC-DKFZ/trixi), [ml_logger](https://github.com/episodeyang/ml_logger)
-* Motivating Dataclasses [intro](https://blog.jetbrains.com/pycharm/2018/04/python-37-introducing-data-class/), [how-different](https://stackoverflow.com/questions/47955263/what-are-data-classes-and-how-are-they-different-from-common-classes)
-* Flexible configuration
-  * in modeling: allennlp, gin, jiant.
-  * in orchestration: [ksonnet](https://github.com/ksonnet), kubernetes-operator 
+- Loggers: [trains](https://github.com/allegroai/trains), [Trixi](https://github.com/MIC-DKFZ/trixi), [ml_logger](https://github.com/episodeyang/ml_logger)
+
+- Motivating Dataclasses [intro](https://blog.jetbrains.com/pycharm/2018/04/python-37-introducing-data-class/), [how-different](https://stackoverflow.com/questions/47955263/what-are-data-classes-and-how-are-they-different-from-common-classes)
+
+- Flexible configuration
+  - in modeling: allennlp, gin, jiant.
+  - in orchestration: [ksonnet](https://github.com/ksonnet), kubernetes-operator 
+  
+  
+
+### Yet another experiment framework?
+
+Systematic experimentation tools are essential for a data scientist. Unfortunately, many existing tools (`kubeflow`, `mlflow`, `polyaxon`) are too monolithic, kubernetes-first, cloud-first, target very diverse audiences and hence spread too thin, and yet lack important dev-friendly features. `sacred` 's design is' tightly coupled and requires several `sacred`-specific changes to your main code (plan to add `sacred`logger as backend). Other tools cater only to a specific task , e.g., `tensorboard` only handles log recording and visualization. Also, contrasting different experiment frameworks is hard: there is no standardized expt-management architecture for machine learning and most open-source frameworks are undergoing a process of adhoc requirements discovery. 
 
 
 
-### Random Notes
-
-* Seamlessly move between `subprocess`-based, `docker`-based and `k8s`-based dispatch of experiment jobs.
-* We target resource-constrained computing environments, small teams of researchers and quick dev-cycles. Though, hoping that our modular design simplifies scaling experiments to large clusters also.
-* You can use `lightex` for your data pipelines and end-to-end preprocess-train pipelines also. Add new parameter fields (`HP`) corresponding to your data transformations.
-* Read more about design challenges and solution [here](docs/anatomy.md).
-* Be careful overwriting fields of nested configs directly. May change a shared field for multiple configs. Better to use `frozen=True` in config definition and `dataclass.replace` explicitly.
-* `docker` and `kubernetes` add overhead to your dev workflow, but are worth it if you want better reproducibility of experiments and multi-node scaling. Some notes [here](https://www.reddit.com/r/MachineLearning/comments/c5qr9z/n_using_kubernetes_for_machine_learning/es3rrpo?utm_source=share&utm_medium=web2x). LightEx makes it easy for small ML teams to gradually add complexity to their workflow and dev infrastructure.
-* We would like to see how 'multi-node' we can get without making the code too complex.
-* Python Feature request: have a separate python extension for `dataclass` files, and loading a dataclass instance from a `dataclass` file.
 
 
 
-### Common Errors
 
-* ERROR mlflow.utils.rest_utils: API request to http://localhost:5000/api/2.0/preview/mlflow/runs/create failed with code 500 != 200, retrying up to 0 more times. API response body: {"error_code": "RESOURCE_DOES_NOT_EXIST", "message": "Could not find experiment with ID 0"}
-  * Create an mlflow experiment. `MultiLogger::__init`__ should take care of this.
-* `alias drmae='docker rm $(docker ps -a -f status=exited -q)'` 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -23,6 +23,7 @@ setuptools.setup(name='lightex',
       platforms=['POSIX'],
       packages=setuptools.find_packages(),
       #entry_points={},
+      scripts=['scripts/lx'],
       classifiers=[
           'Environment :: Console',
           'Intended Audience :: Developers',

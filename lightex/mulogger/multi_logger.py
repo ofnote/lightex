@@ -8,7 +8,6 @@ from .config import MLFlowConfig, PytorchTBConfig, TermLogConfig, LoggerConfig
 
 
 
-
 class MLFlowLogger(AbstractLogger):
     name = 'mlflow'
 
@@ -37,7 +36,7 @@ class MLFlowLogger(AbstractLogger):
         self.mlflow.log_artifacts(from_dir, artifact_path=artifact_path)
 
 
-class PytorchTensorBoardLogger(AbstractLogger):
+class PytorchTBLogger(AbstractLogger):
     name = 'tb_pt'
 
     def __init__(self, C: PytorchTBConfig, project_name=None, experiment_name=None):
@@ -78,7 +77,7 @@ class MultiLogger():
                 self.add_logger(l, mlf)
             elif l == 'tb_pt':
                 assert C is not None and C.tb is not None
-                ptb = PytorchTensorBoardLogger(self.project_name, self.experiment_name, C.tb)
+                ptb = PytorchTBLogger(self.project_name, self.experiment_name, C.tb)
                 self.add_logger(l, ptb)
             elif l == 'trains':
                 from .trains_logger import TrainsLogger
@@ -103,8 +102,13 @@ class MultiLogger():
     def end_run(self):
         for l, logger in self.name2logger.items(): logger.end_run()
 
-    def get_logger(self, logger_name):
-        return self.name2logger[logger_name]
+    def get_loggers(self, logger_name):
+        assert isinstance(logger_name, str)
+        if logger_name == '*':
+            res = list(self.name2logger.values())
+        else:
+            res = [self.name2logger[logger_name]]
+        return res
 
     def _log(self, logger, ltype: str, **args):
         args = ED(args)
@@ -145,8 +149,9 @@ class MultiLogger():
 
     def log(self, logger_name: str, ltype: str, **args):
         #print (f'args: {args}')
-        logger = self.get_logger (logger_name)
-        self._log(logger, ltype, **args)
+        loggers = self.get_loggers (logger_name)
+        for logger in loggers:
+            self._log(logger, ltype, **args)
         
 
 

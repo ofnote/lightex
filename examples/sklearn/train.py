@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import ElasticNet
 import joblib
 
-from mulogger import MLFlowLogger, MultiLogger
+from lightex.mulogger import MLFlowLogger, MultiLogger
 
 def eval_metrics(actual, pred):
     rmse = np.sqrt(mean_squared_error(actual, pred))

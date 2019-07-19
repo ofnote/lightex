@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+
+import argparse
+import shutil
+from pathlib import Path
+
+
+def task_init():
+    print ('do task init')
+    file_parent = Path(__file__).resolve().parent
+    config_file = file_parent / 'config.py' 
+    run_file = file_parent / 'run_expts.py'
+
+    cwd = Path.cwd()
+    shutil.copy2(config_file, cwd)
+    shutil.copy2(run_file, cwd)
+
+
+
+
+
+def main(args):
+    if args.init:
+        task_init()
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--init', const=True, nargs='?', type=bool, default=False)
+    args = parser.parse_args()
+    main(args)
