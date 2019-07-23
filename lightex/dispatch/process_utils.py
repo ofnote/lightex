@@ -56,17 +56,14 @@ def job_completed (result):
 def job_errored(result):
     print (f'error: {result}')
 
-def dispatch_expts_process (expts, log_to_file=False):
+def dispatch_expts_process (expts, log_to_file=True):
     count = len(expts)
     args = zip(expts, repeat(log_to_file))
 
     with Pool(processes=count) as pool:
         #r = pool.starmap(create_job, zip(expts, repeat(log_to_file)))
-
         r = pool.starmap_async(create_job, args, callback=job_completed, error_callback=job_errored)
         r.wait()
-    #for expt in expts:
-    #    create_job (expt, log_to_file)
 
 
 

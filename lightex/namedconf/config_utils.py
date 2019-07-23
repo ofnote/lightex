@@ -73,7 +73,7 @@ def load_config(config_dir, config_name, update_args=None):
                         f'Please specify your experiment configs in "lxconfig.py" in {config_dir}.')
     
     try:
-        import config as M
+        import lxconfig as M
     except:
         raise ValueError('Unable to load experiment configs from file "lxconfig.py"')
         

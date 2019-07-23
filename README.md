@@ -39,11 +39,11 @@ Assume we have an existing `train` project: run trainer with
 
 > `train.py --data-dir ./data —-lr 0.1 -—hidden_dim 512` 
 
-First, initialize the project. This creates files `lxconfig.py` and `run_expts.py` in the current directory.
+In the main project directory, initialize `lightex` — this creates files `lxconfig.py` and `run_expts.py`.
 
 > `lx—init`                               
 
-The file `lxconfig.py` contains pre-defined dataclasses for specifying *named* experiment configs.
+The file `lxconfig.py` contains pre-defined `dataclass`es for specifying *named* experiment configs.
 
 * The main (controller) class `Config`, contains three fields: `er` , `hp` and `run` (see below). 
 * `Config` also includes a `get_experiments` function, which generates a list of experiment configs to be executed by the dispatcher. See [config.md](docs/config.md) for full description of the defined dataclasses.
@@ -75,11 +75,13 @@ Once config named `C1` is defined, run your experiments as follows:
 
 > python run_expts.py -c C1
 
-That's it!
+**That's it!** Now, your experiments, logs, metrics and models are organized and recorded systematically.
 
 #### Modify Experiment Parameters, Experiment Groups
 
-Create a new `HP` instance and replace it in `C1` to create a new `Config`. Recursive replace also supported.
+Modify configs from previous experiments quickly using `replace` and run new experiments. 
+
+Example: Create a new `HP` instance and replace it in `C1` to create a new `Config`. Recursive replace also supported.
 
 ```python
 H2 = HP(lr=1e-3, hidden_dim=1024)
@@ -88,13 +90,13 @@ C2 = replace(C1, hp=H2) #inherit er=R1 and run=Ru1
 
 > python run_expts.py -c C2
 
-To specify and run **experiment groups**, see `HPGroup` in [scripts/lxconfig.py](scripts/lxconfig.py) .
+To specify and run **experiment groups**, specify a set of `HP`s in a `HPGroup` (see [scripts/lxconfig.py](scripts/lxconfig.py)).
 
 **Note**: Although LightEx pre-defines the dataclass hierarchy, it allows the developer plenty of flexibility in defining the individual fields of classes, in particular, the fields of the `HP` class. 
 
 #### Adding Logging to your Code
 
-Use the unified `MultiLogger` [API](lightex/mulogger).
+Use the unified `MultiLogger` [API](lightex/mulogger) to log metrics and artifacts to multiple logger backends.
 
 ```python
 from lightex.mulogger import MLFlowLogger, MultiLogger, PytorchTBLogger
@@ -123,13 +125,14 @@ writer = logger.writer
 #call tensorboard's API
 ```
 
-
-**Note**: Except for changes in logging, no changes are required in your existing code. Easily go back to the earlier ways of experiment management.
+**Note**: Except for changes in logging, no changes are required to your existing code!
 
 
 #### Switch to Docker
 
-Add a `Dockerfile` to your project which builds the runtime environment with all the project dependencies. Update the `Build` instance inside `Resources` config. See [examples/sklearn](examples/sklearn), for example.
+Setting up the `lxconfig` instances pays off here! 
+
+Now, add a `Dockerfile` to your project which builds the runtime environment with all the project dependencies. Update the `Build` instance inside `Resources` config. See [examples/sklearn](examples/sklearn), for example.
 
 > python run_expts.py -c C2 -e docker
 
@@ -169,7 +172,7 @@ In summary, `LightEx` involves the following **one-time setup**:
 - Update logging calls in your code to call `mulogger` API. (Optional)
 - Dockerfile for your project, if you want to use containers for dispatch. (Optional)
 
-While `LightEx` is quick to start with, it is advisable to spend some time understanding the [config schema](namedconf/config.py)
+While `LightEx` is quick to start with, it is advisable to spend some time understanding the [config schema](llightex/config_base.py).
 
 
 

@@ -15,7 +15,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.linear_model import ElasticNet
 import joblib
 
-from lightex.mulogger import MLFlowLogger, MultiLogger
 
 def eval_metrics(actual, pred):
     rmse = np.sqrt(mean_squared_error(actual, pred))
@@ -23,8 +22,24 @@ def eval_metrics(actual, pred):
     r2 = r2_score(actual, pred)
     return rmse, mae, r2
 
+def do_train(alpha, l1_ratio, train_x, train_y, test_x, test_y):
+    en = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
+    en.fit(train_x, train_y)
+
+    predicted_qualities = en.predict(test_x)
+
+    rmse, mae, r2 = eval_metrics(test_y, predicted_qualities)
+
+    print("Elasticnet model (alpha=%f, l1_ratio=%f):" % (alpha, l1_ratio))
+    print("  RMSE: %s" % rmse)
+    print("  MAE: %s" % mae)
+    print("  R2: %s" % r2)
+
+    return rmse, mae, r2, en
 
 def mlflow_run (alpha, l1_ratio, train_x, train_y, test_x, test_y):
+    from lightex.mulogger import MLFlowLogger, MultiLogger
+
     logger = MLFlowLogger('sk')
 
     mlflow = logger.mlflow
@@ -32,17 +47,7 @@ def mlflow_run (alpha, l1_ratio, train_x, train_y, test_x, test_y):
 
 
     with mlflow.start_run():
-        lr = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
-        lr.fit(train_x, train_y)
-
-        predicted_qualities = lr.predict(test_x)
-
-        (rmse, mae, r2) = eval_metrics(test_y, predicted_qualities)
-
-        print("Elasticnet model (alpha=%f, l1_ratio=%f):" % (alpha, l1_ratio))
-        print("  RMSE: %s" % rmse)
-        print("  MAE: %s" % mae)
-        print("  R2: %s" % r2)
+        rmse, mae, r2, en = do_train(alpha, l1_ratio, train_x, train_y, test_x, test_y)
 
         mlflow.log_param("alpha", alpha)
         mlflow.log_param("l1_ratio", l1_ratio)
@@ -50,30 +55,21 @@ def mlflow_run (alpha, l1_ratio, train_x, train_y, test_x, test_y):
         mlflow.log_metric("r2", r2)
         mlflow.log_metric("mae", mae)
         print (mlflow.get_artifact_uri())
-        #mlflow.sklearn.log_model(lr, "model")
+        #mlflow.sklearn.log_model(en, "model")
 
 def logger_run (alpha, l1_ratio, train_x, train_y, test_x, test_y, output_dir):
-    logger = MultiLogger(['mlflow', 'trains'])
-    #logger = MultiLogger(['mlflow', 'trains'])
+    from lightex.mulogger import MLFlowLogger, MultiLogger
+
+    logger = MultiLogger(['mlflow'])
 
     logger.start_run()
-    lr = ElasticNet(alpha=alpha, l1_ratio=l1_ratio, random_state=42)
-    lr.fit(train_x, train_y)
+    rmse, mae, r2, en = do_train(alpha, l1_ratio, train_x, train_y, test_x, test_y)
 
-    predicted_qualities = lr.predict(test_x)
+    logger.log('*', ltype='hpdict', value={'alpha': alpha, 'l1_ratio': l1_ratio})
+    logger.log('*', ltype='scalardict', value={'mae': mae, 'rmse': rmse, 'r2': r2}, step=1)
+    #logger.log('*', ltype='scalardict', value={'mae': mae, 'rmse': rmse, 'r2': r2+1}, step=2)
 
-    (rmse, mae, r2) = eval_metrics(test_y, predicted_qualities)
-
-    print("Elasticnet model (alpha=%f, l1_ratio=%f):" % (alpha, l1_ratio))
-    print("  RMSE: %s" % rmse)
-    print("  MAE: %s" % mae)
-    print("  R2: %s" % r2)
-
-    logger.log('trains', ltype='hpdict', value={'alpha': alpha, 'l1_ratio': l1_ratio})
-    logger.log('trains', ltype='scalardict', value={'mae': mae, 'rmse': rmse, 'r2': r2}, step=1)
-    logger.log('trains', ltype='scalardict', value={'mae': mae, 'rmse': rmse, 'r2': r2+1}, step=2)
-
-    joblib.dump(lr, f'{output_dir}/model.joblib')
+    joblib.dump(en, f'{output_dir}/model.joblib')
     logger.end_run()
 
 if __name__ == "__main__":
@@ -87,10 +83,6 @@ if __name__ == "__main__":
     parser.add_argument('--l1_ratio', required=True)
 
     args = parser.parse_args()
-
-    #print (f'os env: {os.environ}')
-    #mlflow.set_experiment()
-
 
     # Read the wine-quality csv file (make sure you're running this from the root of MLflow!)
     wine_path = os.path.join(args.data_dir, "wine-quality.csv")
@@ -109,6 +101,8 @@ if __name__ == "__main__":
     # l1_ratio = float(args['l1_ratio'])
     alpha = float(args.alpha)
     l1_ratio = float(args.l1_ratio)
+
+    #do_train(alpha, l1_ratio, train_x, train_y, test_x, test_y)
 
     #mlflow_run (alpha, l1_ratio, train_x, train_y, test_x, test_y)
     logger_run (alpha, l1_ratio, train_x, train_y, test_x, test_y, args.output_dir)

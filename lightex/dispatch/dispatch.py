@@ -11,9 +11,10 @@ from .process_utils import dispatch_expts_process
 
 
 def setup_run(engine, expt, run_id, seq_id, log_in_output_dir=False):
+    #print ('setup_run', expt.er.storage)
     if engine == 'process':
-        ltex_out_dir = expt.er.storage.host.output_dir
-        run_data_dir = expt.er.storage.host.data_dir
+        ltex_out_dir = expt.er.storage.output_dir
+        run_data_dir = expt.er.storage.data_dir
     else:
         ltex_out_dir = expt.er.ctr.output_dir
         run_data_dir = expt.er.ctr.data_dir

@@ -21,7 +21,7 @@ from torchvision import datasets, transforms
 from torch.autograd import Variable
 from torch.utils.tensorboard import SummaryWriter
 
-from mulogger import MLFlowLogger, MultiLogger
+from lightex.mulogger import MLFlowLogger, MultiLogger
 
 #from tensorboardX import SummaryWriter
 

@@ -6,7 +6,7 @@ from dacite import from_dict
 from pathlib import Path
 
 from lightex.mulogger import MLFlowConfig, LoggerConfig
-from lightex.config import ContainerDirs, HostStore, Storage, Build, Resources, Run
+from lightex.config_base import *
 
 from lightex.namedconf import to_dict, rreplace
 
@@ -50,18 +50,17 @@ class Config:
 Config Instances
 '''
 
+
 B1 = Build(image_url='ptlex:latest', 
             build_steps=['docker build -t ptlex:latest .'])
 
-
-Ho1 = HostStore(working_dir='.', data_dir='./data')
-S1 = Storage(host=Ho1)
-
-Co1 = ContainerDirs()
+Co1 = Container(build=B1)
+S1 = StorageDirs(working_dir='.', data_dir='./data')
 
 Lm = MLFlowConfig()
 L = LoggerConfig(mlflow=Lm)
-Re1 = Resources(build=B1, storage=S1, ctr=Co1, loggers=L)
+
+Re1 = Resources(storage=S1, ctr=Co1, loggers=L)
 
 
 
@@ -87,6 +86,7 @@ Ru1 = Run(
 C1 = Config(er=Re1, hp=H1, run=Ru1)
 
 # process config
+'''
 Re2 = rreplace(Re1, {
                 'loggers': {'mlflow': {
                         'client_in_cluster': False, 'port': 5000
@@ -94,6 +94,7 @@ Re2 = rreplace(Re1, {
             })
 C2 = Config(er=Re2, hp=H1, run=Ru1)
 
+'''
 
 
 if __name__ == '__main__':

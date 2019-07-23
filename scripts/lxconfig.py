@@ -4,7 +4,7 @@ from typing import List
 from pathlib import Path
 
 from lightex.mulogger import MLFlowConfig, LoggerConfig
-from lightex.config import ContainerDirs, HostStore, Storage, Build, Resources, Run
+from lightex.config_base import Container, StorageDirs, Build, Resources, Run
 from lightex.namedconf import unroll_top_fields, to_dict, rreplace
 
 '''
@@ -62,15 +62,15 @@ Config Instances
 
 B1 = Build(image_url='pytorch_expt', 
             build_steps=['docker build -t pytorch_expt .'])
+Co1 = Container(build=B1)
 
-Ho1 = HostStore(working_dir='.', data_dir='./data')
-S1 = Storage(host=Ho1)
-Co1 = ContainerDirs()
+S1 = StorageDirs(data_dir='./data')
+#L = LoggerConfig(names=['mlflow', 'trains'])
 
 Lm = MLFlowConfig(port=5000)
 L = LoggerConfig(mlflow=Lm)
+R1 = Resources(storage=S1, ctr=Co1, loggers=L) #or ctr=None
 
-R1 = Resources(build=B1, storage=S1, ctr=Co1, loggers=L)
 
 # for k8 engine
 # replace multiple attributes, recursively

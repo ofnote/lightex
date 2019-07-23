@@ -1,18 +1,15 @@
 from dataclasses import dataclass, replace
 from typing import List
-import os
-
 from pathlib import Path
 
 from lightex.mulogger import MLFlowConfig, LoggerConfig
-from lightex.config import ContainerDirs, HostStore, Storage, Build, Resources, Run
-
+from lightex.config_base import *
 from lightex.namedconf import unroll_top_fields, to_dict, rreplace
 
 '''
 Named Config Definitions
 
-Base definitions in lightex/config.py, lightex/mulogger/config.py
+Base definitions in lightex/config_base.py, lightex/mulogger/config.py
 
 '''
 
@@ -58,16 +55,18 @@ Config Instances
 B1 = Build(image_url='sklearn', 
             build_steps=['docker build -t sklearn .'])
 
-Ho1 = HostStore(working_dir='.', data_dir='.')
-S1 = Storage(host=Ho1)
-Co1 = ContainerDirs()
 
 Lm = MLFlowConfig(client_in_cluster=False, port=5000)
 L = LoggerConfig(mlflow=Lm)
-from lightex.mulogger.trains_logger import TrainsConfig
-L.register_logger('trains', TrainsConfig())
+#L = LoggerConfig(names=['mlflow', 'trains'])
 
-R1 = Resources(build=B1, storage=S1, ctr=Co1, loggers=L)
+#from lightex.mulogger.trains_logger import TrainsConfig
+#L.register_logger('trains', TrainsConfig())
+
+Co1 = Container(build=B1)
+S1 = StorageDirs(working_dir='.')
+
+R1 = Resources(storage=S1, ctr=Co1, loggers=L) 
 
 # for k8 engine
 # replace multiple attributes, recursively

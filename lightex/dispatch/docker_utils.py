@@ -28,7 +28,7 @@ def create_env (expt):
 
 def create_job(expt, log_to_file=True):
     er = expt.er
-    bu, ctr = er.build, er.ctr
+    ctr = er.ctr
     run = expt.run
 
     run_cmd = f'mkdir -p {run.output_dir} && {render_command(expt)}'
@@ -42,7 +42,7 @@ def create_job(expt, log_to_file=True):
 
 
     D = DockerConfig(
-            image=bu.image_url,
+            image=ctr.build.image_url,
             name=run.run_name,
             command=command,
             working_dir=ctr.working_dir,
@@ -57,9 +57,13 @@ def create_job(expt, log_to_file=True):
     container = run_container(D)
 
     if log_to_file:
-        out_fname = f'{run.output_dir}/run.log'
-        with open(out_fname, 'w') as fp:
+        storage_out_dir = expt.er.storage.output_dir
+        run_output_log_file = f'{storage_out_dir}/{run.run_name}.log'
+        print (f'Logging output to {run_output_log_file}')
+
+        with open(run_output_log_file, 'wb') as fp:
             for line in container.logs(stream=True):
+                #print(line)
                 fp.write(line)
 
     return container

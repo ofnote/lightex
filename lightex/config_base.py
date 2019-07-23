@@ -7,59 +7,47 @@ from .dispatch.config_containers import VolumeMount
 
 
 @dataclass
-class ContainerDirs:
-    working_dir: str = '/project'
-    data_dir: str = '/data'
-    output_dir: str = '/output'
+class Store:
+    # a particular storage instance
+    path: str = '.'     # access path
+    stype: str = 'file' # storage type: file, nfs, s3, ...
+
+    @property
+    def url(self): 
+        if self.stype == 'file': res = self.path
+        else: raise NotImplementedError(f'{self.stype}') 
+        return res
+    @property
+    def storage_type(self): return self.stype
 
     def __post_init__(self):
-        self.mlflow_dir: str = f"{self.output_dir}/mlflow"
+        if self.stype == 'file':
+            self.path = str(Path(self.path).resolve())
 
-    def get_dirs(self):
+
+@dataclass(init=False)
+class StorageDirs:
+    working: Store       #storage:input -- code lies here
+    data: Store           #storage:input -- data lies here
+    output: Store    #storage:output -- output artifacts go here
+
+    def __init__(self, working_dir='.', data_dir='.', output_dir='/tmp/ltex'):
+        self.working = Store(path=working_dir, stype='file')
+        self.data = Store(path=data_dir, stype='file')
+        self.output = Store(path=output_dir, stype='file')
+
+    @property
+    def working_dir(self): return self.working.url
+    @property
+    def data_dir(self): return self.data.url
+    @property    
+    def output_dir(self): return self.output.url
+    
+    def get_source_urls(self):
         return self.working_dir, self.data_dir, self.output_dir
 
-
-@dataclass
-class HostStore:
-    working_dir: str = '.' #storage:input -- code lies here
-    data_dir: str = '.'  #storage:input -- data lies here
-    output_dir: str = '/tmp/ltex'  #storage:output -- output artifacts go here
-
-    def __post_init__(self):
-        # convert relative paths to absolute paths
-        self.working_dir = str(Path(self.working_dir).resolve())
-        self.data_dir = str(Path(self.data_dir).resolve())
-        self.output_dir = str(Path(self.output_dir).resolve())
-
-    def get_dirs(self):
-        return self.working_dir, self.data_dir, self.output_dir
-
-
-@dataclass
-class Storage:
-    host: HostStore  
-
-    def get_source_dirs(self, storage_type):
-        if storage_type == 'host':
-            return self.host.get_dirs()
-        else:
-            raise NotImplementedError(f'Storage type {storage_type} not supported yet.')
-
-    def get_volume_mounts(self, ctr, storage_type):
-        '''
-        storage_type: depending on storage_type, get the source directories
-        '''
-        assert ctr is not None
-        working_dir, data_dir, output_dir = self.get_source_dirs(storage_type)
-        m1 = VolumeMount(name='input-project', mount_path=ctr.working_dir,
-                            host_path=working_dir, storage_type=storage_type)
-        m2 = VolumeMount(name='input-data', mount_path=ctr.data_dir,
-                            host_path=data_dir, storage_type=storage_type)
-        m3 = VolumeMount(name='output-storage', mount_path=ctr.output_dir,
-                            host_path=output_dir, storage_type=storage_type)
-        #m3 = VolumeMount(name='mlflow-data', mount_path=loggers.mlflow.data_dir_mount,
-         #                    host_path=loggers.mlflow.data_dir)
-        return [m1, m2, m3] 
+    def get_stores(self):
+        return self.working, self.data, self.output
 
 
 
@@ -67,16 +55,24 @@ class Storage:
 class Build: 
     image_url: str
     build_steps: List[str]
+    Dockerfile_path: str = None
     image_pull_policy: str = "IfNotPresent"
 
+@dataclass(frozen=True)
+class Container:
+    build: Build
+    working_dir: str = '/project'
+    data_dir: str = '/data'
+    output_dir: str = '/output'
+
+    def get_dirs(self):
+        return self.working_dir, self.data_dir, self.output_dir
 
 @dataclass(frozen=True)
 class Resources:
-    #host: HostStore 
-    storage: Storage
+    storage: StorageDirs
     loggers: LoggerConfig
-    build: Build = None # None if no containers used
-    ctr: ContainerDirs = None # None if no container used
+    ctr: Container = None # None if no container used
 
     def get_env(self, run: 'Run'): 
         '''return a list of key-value tuples'''
@@ -86,8 +82,17 @@ class Resources:
 
 
     def get_volume_mounts(self):
-        return self.storage.get_volume_mounts(ctr=self.ctr, store_type='host')
+        assert self.ctr is not None
 
+        working, data, output = self.storage.get_stores()
+        ctrd = self.ctr
+        m1 = VolumeMount(name='input-project', mount_path=ctrd.working_dir,
+                            host_path=working.url, storage_type=working.storage_type)
+        m2 = VolumeMount(name='input-data', mount_path=ctrd.data_dir,
+                            host_path=data.url, storage_type=data.storage_type)
+        m3 = VolumeMount(name='output-storage', mount_path=ctrd.output_dir,
+                            host_path=output.url, storage_type=output.storage_type)
+        return [m1, m2, m3] 
 
 @dataclass(frozen=True)
 class Run: 
@@ -95,18 +100,16 @@ class Run:
     experiment_name: str
     engine: str = 'process' #process, docker, k8s
 
+    run_name: str = None #dynamically assigned run name by dispatcher
+    data_dir: str = None # dynamically assigned, either = host.data_dir or ctr.data_dir
+    output_dir: str = None #dynamically assigned output_dir by dispatcher
+    output_log_file: str = None #dynamically assigned by dispatcher
 
     # TODO: move all below to an engine sub-config
     max_cpu: str = "1024m"  # Maximum of half a core
     max_memory: str ="2g"    # Maximum of 2 GB Memory
     persist: bool = True # keep the container / pod around, don't delete
     network: str = 'host' #the network which container belongs to
-
-    run_name: str = None #dynamically assigned run name by dispatcher
-    data_dir: str = None # dynamically assigned, either = host.data_dir or ctr.data_dir
-    output_dir: str = None #dynamically assigned output_dir by dispatcher
-    output_log_file: str = None #dynamically assigned by dispatcher
-
     def get_network(self): return self.network
 
 
