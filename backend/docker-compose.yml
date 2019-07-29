@@ -4,15 +4,15 @@ services:
     environment:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
-    #user: 1000:1000
+    #user: "1000:1000"
     build: 
       context: ./mlflow
       dockerfile: Dockerfile
-      network: host
+    network_mode: host
     image: mlflow-server
     container_name: mlflow
     command: >-
-      sh -c "mkdir -p ${MLDATA} && 
+      sh -c "umask 0000 && mkdir -p ${MLDATA} && 
       mlflow server --backend-store-uri ${MLDATA} --host 0.0.0.0 
       --default-artifact-root ${MLDATA}"
     ports:

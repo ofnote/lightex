@@ -32,9 +32,16 @@ Access trains UI at `localhost:8080`
 >
 > `trains-init` # create ~/trains.conf, ensure server points to localhost:8008, get keys from trains UI.
 >
-> `mv ~/trains.conf .` 
->
-> `export TRAINS_CONFIG_FILE='./trains.conf'`
+> `mv ~/trains.conf .` #trains.conf should be able to access this file during the run
+
+Finally, in `lxconfig.py` for your project:
+
+```python
+trconf = TrainsConfig(config_file='./trains.conf')
+L = LoggerConfig()
+```
+
+
 
 
 

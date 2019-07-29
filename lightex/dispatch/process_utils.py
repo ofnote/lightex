@@ -3,6 +3,7 @@ from itertools import repeat
 import subprocess, os
 from pathlib import Path
 from ..namedconf import render_command, to_dict
+from .config_engines import ProcessConfig
 
 def create_env (expt):
     glb_env = os.environ.copy()
@@ -14,6 +15,7 @@ def create_env (expt):
     return glb_env
 
 def create_job(expt, log_to_file):
+    #print ('create_job: ', expt)
     command = render_command(expt)
     command = command.strip().replace('\n','').replace('\t','').replace('\r','')
     cmds = [c for c in command.split(' ') if c != '']
@@ -44,26 +46,29 @@ def create_job(expt, log_to_file):
     if log_to_file:
         fp.close()
     else:
-        print ('stdout:')
+        print ('process_utils: stdout:')
         print (result.stdout.decode('utf-8'))
-        print ('stderr:')
+        print ('process_utils: stderr:')
         print (result.stderr.decode('utf-8'))
 
 
 def job_completed (result):
-    print (f'completed: {result}')
+    print (f'process_utils: completed: {result}')
 
 def job_errored(result):
-    print (f'error: {result}')
+    print (f'process_utils: error: {result}')
 
-def dispatch_expts_process (expts, log_to_file=True):
+def dispatch_expts_process (expts, P: ProcessConfig):
     count = len(expts)
-    args = zip(expts, repeat(log_to_file))
+    args = zip(expts, repeat(P.log_to_file))
 
     with Pool(processes=count) as pool:
-        #r = pool.starmap(create_job, zip(expts, repeat(log_to_file)))
-        r = pool.starmap_async(create_job, args, callback=job_completed, error_callback=job_errored)
-        r.wait()
+        if P.async_exec:
+            r = pool.starmap_async(create_job, args, callback=job_completed, error_callback=job_errored)
+            r.wait()
+        else:
+            r = pool.starmap(create_job, args)
+
 
 
 

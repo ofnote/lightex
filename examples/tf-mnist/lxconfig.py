@@ -1,12 +1,10 @@
 from dataclasses import dataclass, replace
 from typing import List
-import os
 
 from pathlib import Path
 
 from lightex.mulogger import MLFlowConfig, LoggerConfig
-from lightex.config import ContainerDirs, HostStore, Storage, Build, Resources, Run
-
+from lightex.config_base import Container, StorageDirs, Build, Resources, Run
 from lightex.namedconf import unroll_top_fields, to_dict, rreplace
 
 '''
@@ -49,17 +47,16 @@ Config Instances
 
 B1 = Build(image_url='tensorflow/tensorflow:latest-devel-gpu-py3', 
             build_steps=[]) #'docker build -t xx .'])
+Co1 = Container(build=B1)
 
-Ho1 = HostStore(working_dir='.', data_dir='./data')
-S1 = Storage(host=Ho1)
-Co1 = ContainerDirs()
+S1 = StorageDirs(working_dir='.', data_dir='./data')
+L = LoggerConfig(mlflow=MLFlowConfig())
+Re1 = Resources(storage=S1, ctr=Co1, loggers=L)
 
-Lm = MLFlowConfig(client_in_cluster=False, port=5000)
-L = LoggerConfig(mlflow=Lm)
-from lightex.mulogger.trains_logger import TrainsConfig
-L.register_logger('trains', TrainsConfig())
+L = LoggerConfig(mlflow=MLFlowConfig())
+#from lightex.mulogger.trains_logger import TrainsConfig
+#L.register_logger('trains', TrainsConfig())
 
-R1 = Resources(build=B1, storage=S1, ctr=Co1, loggers=L)
 H1 = HP()
 
 Ru1 = Run(
@@ -70,7 +67,7 @@ Ru1 = Run(
     experiment_name="tf_mnist_summ",
     )
 
-C1 = Config(er=R1, hp=H1, run=Ru1)
+C1 = Config(er=Re1, hp=H1, run=Ru1)
 
 
 

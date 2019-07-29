@@ -5,7 +5,7 @@ from dacite import from_dict
 from pathlib import Path
 
 from lightex.mulogger import MLFlowConfig, LoggerConfig
-from lightex.config import ContainerDirs, HostStore, Storage, Build, Resources, Run
+from lightex.config_base import Container, StorageDirs, Build, Resources, Run
 from lightex.namedconf import unroll_top_fields, to_dict, rreplace
 
 
@@ -67,13 +67,13 @@ Config Instances
 B1 = Build(image_url='efnet:latest', 
             build_steps=['docker build -t efnet:latest .'])
 
-Ho1 = HostStore(working_dir='.', data_dir='/data/imagenette-160')
-S1 = Storage(host=Ho1)
-Co1 = ContainerDirs()
 
-Lm = MLFlowConfig()
-L = LoggerConfig(mlflow=Lm)
-Re1 = Resources(build=B1, storage=S1, ctr=Co1, loggers=L)
+Co1 = Container(build=B1)
+S1 = StorageDirs(working_dir='.', data_dir='/data/imagenette-160')
+
+
+L = LoggerConfig(mlflow=MLFlowConfig())
+Re1 = Resources(storage=S1, ctr=Co1, loggers=L)
 
 H1 = HP(batch_size=32, epochs=1, gpu_id=0, model_name='efficientnet-b0')
 HPG1 = HPG(batch_size=16, epochs=1, gpu_id=0, model_name=['efficientnet-b0', 'efficientnet-b1'])

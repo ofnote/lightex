@@ -7,10 +7,10 @@ import uuid
 from ..namedconf import render_command
 from .k8sutils import dispatch_expts_k8s
 from .docker_utils import dispatch_expts_docker
-from .process_utils import dispatch_expts_process
+from .process_utils import dispatch_expts_process, ProcessConfig
 
 
-def setup_run(engine, expt, run_id, seq_id, log_in_output_dir=False):
+def setup_run(engine, expt, run_id, seq_id, log_in_output_dir=False, debug=False):
     #print ('setup_run', expt.er.storage)
     if engine == 'process':
         ltex_out_dir = expt.er.storage.output_dir
@@ -33,67 +33,31 @@ def setup_run(engine, expt, run_id, seq_id, log_in_output_dir=False):
                 output_dir=run_output_dir, output_log_file=run_output_log_file)
     expt = replace(expt, run=R)
 
+    if debug:
+        print (f'updated run config to {R}')
+
     return expt
 
 
 
-def dispatch_expts (expts, engine, dry_run=False):
+def dispatch_expts (expts, engine, dry_run=False, debug=False):
     if dry_run:
         print ("The following command will be run for one of experiments")
         print (render_command(expts[0]))
         return
 
     run_id = str(uuid.uuid4())[:3]
-    expts = [setup_run (engine, expt, run_id, seq_id) for seq_id, expt in enumerate(expts)]
+    expts = [setup_run (engine, expt, run_id, seq_id, debug=debug) for seq_id, expt in enumerate(expts)]
 
     if engine == 'process':
-        dispatch_expts_process(expts)
+        P = ProcessConfig(log_to_file=True, async_exec=True) #TODO: add this to run
+        dispatch_expts_process(expts, P)
     elif engine == 'docker':
         dispatch_expts_docker(expts)
     elif engine == 'k8s':
         dispatch_expts_k8s(expts)
     else:
         raise NotImplementedError(f'Unsupported dispatch engine {engine}')
-
-
-
-
-'''
-# older version of creating jobs via yaml
-
-import tempfile
-
-def render_yaml(job_config):
-    # Create the jinja2 environment.
-    j2_env = Environment(loader=FileSystemLoader(THIS_DIR),
-                            trim_blocks=True)
-
-    # Pod YAML template
-    data = j2_env.get_template('pod.yaml.j2').render(
-        **job_config
-    )
-
-    return data
-
-
-
-def make_job (expt, k8s_client, k8s_batch):
-    job_id = expt['jobid']
-
-    yaml = render_yaml(expt)
-    tf = tempfile.NamedTemporaryFile()
-    with open(tf.name, "w") as f:
-        f.write(yaml)
-    k8s_api = utils.create_from_yaml(k8s_client, tf.name)
-    deps = k8s_batch.read_namespaced_job(f"m1-{job_id}", "default")
-    print(f"Job {deps.metadata.name} created")
-
-
-'''
-
-
-
-
 
 
 

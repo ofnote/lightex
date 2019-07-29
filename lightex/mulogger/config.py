@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field, fields
 from typing import List
 from pathlib import Path
 import logging
@@ -48,27 +48,55 @@ class PytorchTBConfig:
     def get_env(self):
         return []
 
-class LoggerConfig(ED):
+@dataclass(init=False)
+class LoggerConfig():
     _known_loggers = {
         'mlflow': MLFlowConfig,
         'tb_pt': PytorchTBConfig
     }
 
-    def __init__(self, mlflow: MLFlowConfig = None, ptb: PytorchTBConfig=None):
-        self.mlflow = MLFlowConfig() if mlflow is None else mlflow
-        self.ptb = PytorchTBConfig() if ptb is None else ptb
+    #the fields of this dataclass are set dynamically
+    #mlflow : <conf>
+    #trains : <conf>
 
-    def register_logger (self, name, conf):
-        self[name] = conf
+    def __init__(self, loggers: List[str] = None, **kwargs):
+        self.loggers = {}
+
+        if loggers is not None:
+            for name in loggers:
+                self.init_logger(name)
+        for logger, value in kwargs.items():
+            self.init_logger(logger, value)
+        assert (len(self.loggers) > 0), "No loggers declared"
+    
+    def init_logger(self, name, config=None):
+        #print(f'LoggerConfig: init logger {name}')
+        assert isinstance(name, str), f'Expecting string, but got: {name}'
+
+        if config is None:
+            config = LoggerConfig.get_config_class(name)()
+
+        self.loggers[name] = config
+        setattr(self, name, config)
+        LoggerConfig.register_logger(name, config)
+
+    @staticmethod
+    def get_config_class(name):
+        assert name in LoggerConfig._known_loggers, f"{name}: not a registered logger"
+        return LoggerConfig._known_loggers[name]
+
+    @staticmethod
+    def register_logger (name, conf):
+        if name in LoggerConfig._known_loggers: return
         LoggerConfig._known_loggers[name] = conf.__class__.__name__
 
     def get_env(self):
         res = []
-        for name, config in self.items():
+        for name, config in self.loggers.items():
             #print (config.get_env())
             res.extend(config.get_env())
         #print (f'logger: get_env: {res}')
-        return res
+        return res + [('LX_LOGGERS', ','.join(self.loggers.keys()))]
 
 
 if __name__ == '__main__':

@@ -57,8 +57,7 @@ B1 = Build(image_url='ptlex:latest',
 Co1 = Container(build=B1)
 S1 = StorageDirs(working_dir='.', data_dir='./data')
 
-Lm = MLFlowConfig()
-L = LoggerConfig(mlflow=Lm)
+L = LoggerConfig(mlflow=MLFlowConfig())
 
 Re1 = Resources(storage=S1, ctr=Co1, loggers=L)
 

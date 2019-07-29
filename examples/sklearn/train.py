@@ -58,9 +58,9 @@ def mlflow_run (alpha, l1_ratio, train_x, train_y, test_x, test_y):
         #mlflow.sklearn.log_model(en, "model")
 
 def logger_run (alpha, l1_ratio, train_x, train_y, test_x, test_y, output_dir):
-    from lightex.mulogger import MLFlowLogger, MultiLogger
+    from lightex.mulogger import MultiLogger
 
-    logger = MultiLogger(['mlflow'])
+    logger = MultiLogger()
 
     logger.start_run()
     rmse, mae, r2, en = do_train(alpha, l1_ratio, train_x, train_y, test_x, test_y)

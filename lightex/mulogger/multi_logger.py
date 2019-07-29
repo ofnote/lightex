@@ -57,41 +57,50 @@ class PytorchTBLogger(AbstractLogger):
     def log_histogram(self, name, value, step):
         self.writer.add_histogram(name, value, step)
 
+def get_conf(C, logger_name, default_class):
+    if C is not None:
+        conf = getattr(C, logger_name)
+        if conf is not None:
+            return conf
+    else:
+        return default_class()
+
+def get_loggers(loggers):
+    if loggers is not None:
+        assert isinstance(loggers, list), "Provide a list of target loggers"
+        return loggers
+    loggers = os.environ['LX_LOGGERS'].split(',')
+    #print('Declared Loggers: ', loggers)
+    return loggers
+
 
 class MultiLogger():
     name = 'multilogger'
 
-
-    def __init__(self, loggers: List[str], experiment_name=None, project_name=None, C: LoggerConfig=None):
+    def __init__(self, loggers: List[str]=None, experiment_name=None, project_name=None, C: LoggerConfig=None):
         self.loggers = loggers
         self.experiment_name = get_experiment_name(experiment_name)
         self.project_name = get_project_name(project_name)
         self.name2logger = {}
 
-        assert isinstance(loggers, list), "Provide a list of target loggers"
+        loggers = get_loggers(loggers)
         
         for l in loggers:
             if l == 'mlflow':
-                mf_config = None if C is None else C.mlflow
+                mf_config = get_conf(C, l, MLFlowConfig)
                 mlf = MLFlowLogger(self.project_name, self.experiment_name, mf_config)
                 self.add_logger(l, mlf)
-            elif l == 'tb_pt':
-                assert C is not None and C.tb is not None
-                ptb = PytorchTBLogger(self.project_name, self.experiment_name, C.tb)
+            elif l == 'tbpt':
+                tb_config = get_conf(C, l, PytorchTBConfig)
+                ptb = PytorchTBLogger(self.project_name, self.experiment_name, tb_config)
                 self.add_logger(l, ptb)
             elif l == 'trains':
-                from .trains_logger import TrainsLogger
-                C_trains = C.trains if C is not None else None
-                tr = TrainsLogger(self.project_name, self.experiment_name, C_trains)
+                from .trains_logger import TrainsLogger, TrainsConfig
+                tr_conf = get_conf(C, l, TrainsConfig)
+                tr = TrainsLogger(self.project_name, self.experiment_name, tr_conf)
                 self.add_logger(l, tr)
             else:
                 raise Exception(f'Unsupported logger name: {l}, Supported: {LoggerConfig._known_loggers}')
-
-    '''
-    @staticmethod
-    def register_logger(name, conf):
-        LoggerConfig.register_logger(name, conf)
-    '''
 
     def add_logger(self, name, logger_obj):
         #MultiLogger.register_logger(name, logger_obj.__class__.__name__)

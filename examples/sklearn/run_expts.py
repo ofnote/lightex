@@ -11,7 +11,7 @@ def main(args):
     C = load_config(config_dir='.', config_name=args.config_name)
     expts = C.get_experiments()
     
-    dispatch_expts(expts, engine=args.engine, dry_run=args.d)
+    dispatch_expts(expts, engine=args.engine, dry_run=args.d, debug=False)
 
 
 #LEX_EXPERIMENT_NAME='out1' MLFLOW_TRACKING_URI='http://localhost:30005' 

@@ -176,7 +176,7 @@ While `LightEx` is quick to start with, it is advisable to spend some time under
 
 
 
-### Dependencies, Directory Structure
+### Dependencies
 
 Python > 3.6 (require `dataclasses`, included during install). 
 
@@ -194,16 +194,17 @@ Python > 3.6 (require `dataclasses`, included during install).
 ### References
 
 - ML Experiment Frameworks: [kubeflow](https://github.com/kubeflow/kubeflow), [mlflow](https://www.mlflow.org/docs/latest/index.html), [polyaxon](https://polyaxon.com/), ...
-
 - Loggers: [sacred](https://sacred.readthedocs.io/en/latest/index.html), [trains](https://github.com/allegroai/trains), [Trixi](https://github.com/MIC-DKFZ/trixi), [ml_logger](https://github.com/episodeyang/ml_logger)
-
 - Motivating Dataclasses [intro](https://blog.jetbrains.com/pycharm/2018/04/python-37-introducing-data-class/), [how-different](https://stackoverflow.com/questions/47955263/what-are-data-classes-and-how-are-they-different-from-common-classes)
-
 - Flexible configuration
   - in modeling: allennlp, gin, jiant.
   - in orchestration: [ksonnet](https://github.com/ksonnet), kubernetes-operator 
-  
-  
+- On the pains of ML experimentation
+  - an article from [wandb](https://www.wandb.com/articles/iteratively-fine-tuning-neural-networks-with-weights-biases) 
+
+Most current (July 2019 end) tools focus on the *logger* component and provide selective `qviz` components. `kubeflow` and `polyaxon` are tied to the (k8s) *dispatcher*. Every tool has its own version of config management — mostly *yaml* based, where config types are absent or have a non-nested config class. Config-specific languages have been also proposed (ksonnet, sonnet, gin).
+
+
 
 ### Yet another experiment framework?
 

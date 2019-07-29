@@ -5,8 +5,6 @@ https://github.com/lukemelas/EfficientNet-PyTorch/blob/master/examples/imagenet/
 Evaluate on ImageNet. Note that at the moment, training is not implemented (I am working on it).
 that being said, evaluation is working.
 """
-import sys
-sys.path.append('../../')
 
 import argparse
 import os
