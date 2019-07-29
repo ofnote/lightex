@@ -1,5 +1,11 @@
 ### Logger Backends
 
+#### WandB
+
+Run `wandb login` from your terminal to signup or authenticate your machine (we store your api key in ~/.netrc). You can also set the `WANDB_API_KEY` environment variable with a key from your [settings](https://app.wandb.ai/settings).
+
+
+
 #### MLFlow
 
 Start mlflow tracker:
@@ -38,7 +44,7 @@ Finally, in `lxconfig.py` for your project:
 
 ```python
 trconf = TrainsConfig(config_file='./trains.conf')
-L = LoggerConfig()
+L = LoggerConfig(trains=trconf)
 ```
 
 

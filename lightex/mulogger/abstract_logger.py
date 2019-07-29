@@ -41,6 +41,20 @@ class AbstractLogger():
     def log_image(self, name, img: 'matrix', step):
         raise NotImplementedError
 
+    def log_audio(self, name, audio, step):
+        raise NotImplementedError
+        
+
+    def log_table(self, name, data, columns):
+        raise NotImplementedError
+
+    def save(self, files: str):
+        raise NotImplementedError
+    def restore(self, files: str):
+        raise NotImplementedError
+
+
+
 
 def get_experiment_name (experiment_name):
     #print (os.environ)

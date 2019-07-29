@@ -74,14 +74,14 @@ class TrainsLogger(AbstractLogger):
         self.logger.report_vector(name, "default_histogram", iteration=step, values=value)
         self.flush()
 
-    def log_2d(self, name, value, step, scatter: bool):
-        if scatter:
+    def log_2d(self, name, value, step, *args):
+        if 'scatter' in args:
             self.logger.report_scatter2d(name, "default2dscatter", iteration=step, values=value)
         else:
             self.logger.report_matrix(name, "default2dmatrix", iteration=step, values=value)
         self.flush()
 
-    def log_3d(self, name, value, step, scatter: bool):
+    def log_3d(self, name, value, step):
         self.logger.report_scatter3d(name, "default3dscatter", iteration=step, values=value)
         self.flush()
 
