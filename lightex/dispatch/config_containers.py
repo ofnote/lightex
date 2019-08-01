@@ -1,6 +1,7 @@
 from dataclasses import asdict, astuple
 from dataclasses import dataclass, field
 from typing import List
+import os
 
 from docker.types import Mount
 
@@ -23,6 +24,9 @@ class DockerConfig:
     resources: dict = field(default_factory=dict)
     environment: dict = field(default_factory=dict)
     network: str = 'host'
+
+    #user: int = os.getuid()
+    #group_add: List[int] = field(default_factory=list)
     
     working_dir: str = None
     detach: bool = True
@@ -32,6 +36,7 @@ class DockerConfig:
         self.command = ' '.join(self.command)
         for key, value in self.resources.items():
             setattr(self, key, value)
+        #self.group_add = [os.getgid()]
 
         print (f'dockerconfig: {self.command}')
 
@@ -46,7 +51,6 @@ class DockerConfig:
             #else: v = asdict(f)
             res[k] = v
 
-        #print (res)
         return res
 
 

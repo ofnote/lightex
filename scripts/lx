@@ -18,14 +18,13 @@ def task_init():
 
 
 
-
 def main(args):
     if args.init:
         task_init()
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--init', const=True, nargs='?', type=bool, default=False)
+    parser = argparse.ArgumentParser("LightEx CLI")
+    parser.add_argument('--init', const=True, nargs='?', type=bool, default=False, required=True)
     args = parser.parse_args()
     main(args)

@@ -1,5 +1,6 @@
 from dataclasses import asdict
 import docker
+import os
 from .config_containers import DockerConfig
 from ..namedconf import render_command, to_dict
 
@@ -31,7 +32,22 @@ def create_job(expt, log_to_file=True):
     ctr = er.ctr
     run = expt.run
 
-    run_cmd = f'mkdir -p {run.output_dir} && {render_command(expt)}'
+    #print (run.output_dir)
+    uid = os.getuid()
+    gid = os.getgid()
+
+    # hack to add ubuntu user with right gid
+
+    run_cmd = f'groupadd --gid {gid} ubuntu; useradd -rm -d /home/ubuntu -s /bin/bash ubuntu -u {uid} -g {gid}\
+                && mkdir -p {run.output_dir}\
+                && chown -R ubuntu:ubuntu {run.output_dir}/..\
+                && su - ubuntu\
+                && ls -ld {run.output_dir}; whoami'
+
+    #&& echo "ubuntu ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers\
+    #   && su - ubuntu\ # this doesnt work!!
+               
+    run_cmd += f'&& {render_command(expt)}'
     command = ['sh', '-c', f'\"{run_cmd}\"']
 
     mount_list = er.get_volume_mounts() #[{name, mount_path, host_path}]
@@ -52,6 +68,7 @@ def create_job(expt, log_to_file=True):
             environment=env,
             network=network
         )
+    #print ("==========")
     #print (D.to_dict())
     
     container = run_container(D)

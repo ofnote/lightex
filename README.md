@@ -16,7 +16,7 @@ Unlike most experiment frameworks, `LightEx`sports a modular, and highly configu
 
 The run environment and parameters for your experiments are specified using a config file `lxconfig.py` in your project directory. Modify, inherit, and create new *named* config instances, on-the-fly, as you perform a series of experiments. 
 
-Learn more about the **anatomy** of a ML experimentation framework [here](docs/anatomy.md).
+Learn more about the **anatomy** of a ML experimentation framework [here](docs/anatomy.md). Also, [yet-another-expt-framework] (#yet-another-experiment-framework) ?
 
 #### Benefits
 
@@ -61,7 +61,7 @@ class Config:
         return expts
 ```
 
-Instantiate class `HP` with actual parameters, and class `Run` to mimic the command with placeholders.
+Instantiate class `HP` with actual parameters, and class `Run` to mimic the command with placeholders. 
 
 ```python
 cmd="python train.py --data-dir {{run.data_dir}} --lr {{hp.lr}} --hidden_dim {{hp.hidden_dim}}" #placeholders refer to fields of Experiment instance
@@ -77,11 +77,11 @@ Once config named `C1` is defined, run your experiments as follows:
 
 **That's it!** Now, your experiments, logs, metrics and models are organized and recorded systematically.
 
-#### Modify Experiment Parameters, Experiment Groups
+### Modify Experiment Parameters, Experiment Groups
 
 Modify configs from previous experiments quickly using `replace` and run new experiments. 
 
-Example: Create a new `HP` instance and replace it in `C1` to create a new `Config`. Recursive replace also supported.
+**Example**: Create a new `HP` instance and replace it in `C1` to create a new `Config`. Recursive replace also supported.
 
 ```python
 H2 = HP(lr=1e-3, hidden_dim=1024)
@@ -90,13 +90,15 @@ C2 = replace(C1, hp=H2) #inherit er=R1 and run=Ru1
 
 > python run_expts.py -c C2
 
-To specify and run **experiment groups**, specify a set of `HP`s in a `HPGroup` (see [scripts/lxconfig.py](scripts/lxconfig.py)).
+To specify and run **experiment groups**, specify a set of `HP`s in a `HPGroup` (see [scripts/lxconfig.py](scripts/lxconfig.py)). Use [`lightex.namedconf.argparse_to_command`](lightex/namedconf/config_utils.py) for converting long argparse commands to `Run.cmd` format.
 
 **Note**: Although LightEx pre-defines the dataclass hierarchy, it allows the developer plenty of flexibility in defining the individual fields of classes, in particular, the fields of the `HP` class. 
 
-#### Adding Logging to your Code
+### Adding Logging to your Code
 
 Use the unified `MultiLogger` [API](lightex/mulogger) to log metrics and artifacts to multiple logger backends.
+
+Supported Loggers: `mlflow`, `tensorboard`,`trains`, `wandb`.
 
 ```python
 from lightex.mulogger import MLFlowLogger, MultiLogger, PytorchTBLogger
@@ -116,19 +118,14 @@ logger.end_run()
 Or, use one of the existing loggers' API directly.
 
 ```python
-logger = MLFlowLogger()
-mlflow = logger.mlflow
-# call mlflow API
-
-logger = PytorchTBLogger()
-writer = logger.writer
-#call tensorboard's API
+logger = MLFlowLogger(); mlflow = logger.mlflow  # call mlflow API
+logger = PytorchTBLogger() ; writer = logger.writer #call tensorboard's API
+# Similarly, use TrainsLogger for trains and WBLogger for wandb
 ```
 
-**Note**: Except for changes in logging, no changes are required to your existing code!
+**Note**: Except for changes in logging, no changes are required to your existing code! Setup the logger backend using scripts [here](backend/).
 
-
-#### Switch to Docker
+### Switch to Docker
 
 Setting up the `lxconfig` instances pays off here! 
 
@@ -138,18 +135,16 @@ Now, add a `Dockerfile` to your project which builds the runtime environment wit
 
 Both your code and data are mounted on the container (no copying involved) — minimal disruption in your dev cycle.
 
-#### Advanced Features
+## Advanced Features
 
 More advanced features are in development stage.
 
 **Modifying, Adding Loggers**
 
 ```python
-Lm = MLFlowConfig(client_in_cluster=False, port=5000)
-L = LoggerConfig(mlflow=Lm)
 from lightex.mulogger.trains_logger import TrainsConfig
-L.register_logger('trains', TrainsConfig())
-
+Lm = MLFlowConfig(client_in_cluster=False, port=5000)
+L = LoggerConfig(mlflow=Lm, trains=TrainsConfig())
 R1 = Resources(build=..., storage=..., ctr=..., loggers=L)
 ```
 
@@ -184,7 +179,8 @@ Python > 3.6 (require `dataclasses`, included during install).
 
 ### Design Challenges
 
-- A significant portion of experiment manager design is about setting up and propagating a giant web of configuration variables. 
+- The configuration system allows you to abstract away the locations of the **code** (project directory), **data** directory, and the **output** directory, via the `cmd` field of `Run`. This enables running your code as-is across all dispatcher environments (process, docker, kubernetes). 
+- A significant part of experiment manager design is about setting up and propagating a giant web of configuration variables. 
   - No optimal choice here: `json`,`yaml`,`jsonnet`— all formats have issues. 
   - Using `dataclass`es, we can write complex config specs, with built-in inheritance and ability to do *local updates*. Tiny bit of a learning curve here, bound to python, but we gain a lot of flexibility.
 - A unified `mulogger` API to abstract away the API of multiple logging backends.
@@ -202,7 +198,7 @@ Python > 3.6 (require `dataclasses`, included during install).
 - On the pains of ML experimentation
   - an article from [wandb](https://www.wandb.com/articles/iteratively-fine-tuning-neural-networks-with-weights-biases) 
 
-Most current (July 2019 end) tools focus on the *logger* component and provide selective `qviz` components. `kubeflow` and `polyaxon` are tied to the (k8s) *dispatcher*. Every tool has its own version of config management — mostly *yaml* based, where config types are absent or have a non-nested config class. Config-specific languages have been also proposed (ksonnet, sonnet, gin).
+Most current (2019 Q3) tools focus on the *logger* component and provide selective `qviz` components. `kubeflow` and `polyaxon` are tied to the (k8s) *dispatcher*. Every tool has its own version of config management — mostly *yaml* based, where config types are absent or have a non-nested config class. Config-specific languages have been also proposed (ksonnet, sonnet, gin).
 
 
 
