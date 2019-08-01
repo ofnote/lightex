@@ -12,7 +12,7 @@ install_requires = ['easydict', 'dacite', 'kubernetes', 'docker']
 install_requires += ['dataclasses;python_version<"3.7"']
 
 setuptools.setup(name='lightex',
-      version='0.0.3',
+      version='0.0.4',
       description="LightEx: A Light Experiment Manager",
       long_description=get_long_description(),
       long_description_content_type="text/markdown",
