@@ -21,10 +21,14 @@ def task_init():
 def main(args):
     if args.init:
         task_init()
+    elif args.show:
+        from ..qviz.show import show_all_runs
+        show_all_runs()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("LightEx CLI")
-    parser.add_argument('--init', const=True, nargs='?', type=bool, default=False, required=True)
+    parser.add_argument('--init', const=True, nargs='?', type=bool, default=False)
+    parser.add_argument('show', const=True, nargs='?', type=bool, default=False)
     args = parser.parse_args()
     main(args)
