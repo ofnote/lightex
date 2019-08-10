@@ -22,7 +22,7 @@ def main(args):
     if args.init:
         task_init()
     elif args.show:
-        from ..qviz.show import show_all_runs
+        from lightex.qviz.show import show_all_runs
         show_all_runs()
 
 

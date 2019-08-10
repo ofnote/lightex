@@ -10,6 +10,10 @@ class MLflowQViz:
         self.client = mlflow.tracking.MlflowClient(config.uri())
         #from mlflow.entities import RunInfo, RunStatus
 
+    def show_run_data (self, data):
+        print (f'params: {data.params}')
+        print (f'metrics: {data.metrics}')
+
     def show_runs(self, runs, meta_fields=['status', 'start_time', 'end_time', 'run_id']):
         df = pd.DataFrame([{fn: getattr(run.info, fn) for fn in meta_fields} for run in runs], columns=meta_fields)
         val = df['end_time'] - df['start_time']
@@ -21,9 +25,8 @@ class MLflowQViz:
             print (f'** run {run_id}')
             print (df[df['run_id'] == run_id])
 
-            data = run.data
-            print (f'params: {data.params}')
-            print (f'metrics: {data.metrics}')
+            self.show_run_data(run.data)
+
 
     def get_all_runs(self):
         expts = self.client.list_experiments()

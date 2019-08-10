@@ -16,7 +16,7 @@ Unlike most experiment frameworks, `LightEx`sports a modular, and highly configu
 
 The run environment and parameters for your experiments are specified using a config file `lxconfig.py` in your project directory. Modify, inherit, and create new *named* config instances, on-the-fly, as you perform a series of experiments. 
 
-Learn more about the **anatomy** of a ML experimentation framework [here](docs/anatomy.md). Also, [yet-another-expt-framework] (#yet-another-experiment-framework) ?
+Learn more about the **anatomy** of a ML experimentation framework [here](docs/anatomy.md). Also, why [yet another experiment framework] (#yet-another-experiment-framework) ?
 
 #### Benefits
 
@@ -35,25 +35,26 @@ Learn more about the **anatomy** of a ML experimentation framework [here](docs/a
 
 ### Quick Start
 
-Assume we have an existing `train` project: run trainer with 
+Assume we have an existing ML project, with the following model train command:
 
 > `train.py --data-dir ./data —-lr 0.1 -—hidden_dim 512` 
 
-In the main project directory, initialize `lightex` — this creates files `lxconfig.py` and `run_expts.py`.
+In the main project directory, initialize `lightex` :
 
-> `lx—init`                               
+> `lx init`                               
 
-The file `lxconfig.py` contains pre-defined `dataclass`es for specifying *named* experiment configs.
+This creates files `lxconfig.py` and `run_expts.py`. The file `lxconfig.py` contains pre-defined `dataclass`es for specifying *named* experiment configs.
 
-* The main (controller) class `Config`, contains three fields: `er` , `hp` and `run` (see below). 
+* The main class `Config`, contains three fields: `er` , `hp` and `run` (see example below), which store configurations for logging and storage resources, hyper-parameters, and runtime, respectively. The nested classes `Resources`, `HP` and `Run` are pre-defined  in `lxconfig.py` (see [config.md](docs/config.md)).
 * `Config` also includes a `get_experiments` function, which generates a list of experiment configs to be executed by the dispatcher. See [config.md](docs/config.md) for full description of the defined dataclasses.
+* To create experiments, we need to create an **instance** of `Config` depending on the project environment and dependencies.
 
 ```python
 
 @dataclass
 class Config:
-    er: Resources 					#(Logger, Storage resources)
-    hp: HP 							#(Hyper-parameters of model, training)
+    er: Resources 					#(Logging, Storage resources)
+    hp: HP 						#(Hyper-parameters of model, training)
     run: Run 						#(Run-time config)
 
     def get_experiments(self): #required: generate a list of experiments to run
@@ -61,7 +62,7 @@ class Config:
         return expts
 ```
 
-Instantiate class `HP` with actual parameters, and class `Run` to mimic the command with placeholders. 
+For example, here we instantiate class `HP` with actual parameters, and class `Run` to mimic the command with **placeholders**. 
 
 ```python
 cmd="python train.py --data-dir {{run.data_dir}} --lr {{hp.lr}} --hidden_dim {{hp.hidden_dim}}" #placeholders refer to fields of Experiment instance
@@ -75,13 +76,18 @@ Once config named `C1` is defined, run your experiments as follows:
 
 > python run_expts.py -c C1
 
+
 **That's it!** Now, your experiments, logs, metrics and models are organized and recorded systematically.
+
+------
+
+
 
 ### Modify Experiment Parameters, Experiment Groups
 
 Modify configs from previous experiments quickly using `replace` and run new experiments. 
 
-**Example**: Create a new `HP` instance and replace it in `C1` to create a new `Config`. Recursive replace also supported.
+**Example**: Create a new `HP` instance and replace it in `C1` to create a new `Config`. *Recursive* replace also supported.
 
 ```python
 H2 = HP(lr=1e-3, hidden_dim=1024)
@@ -90,7 +96,8 @@ C2 = replace(C1, hp=H2) #inherit er=R1 and run=Ru1
 
 > python run_expts.py -c C2
 
-To specify and run **experiment groups**, specify a set of `HP`s in a `HPGroup` (see [scripts/lxconfig.py](scripts/lxconfig.py)). Use [`lightex.namedconf.argparse_to_command`](lightex/namedconf/config_utils.py) for converting long argparse commands to `Run.cmd` format.
+* To specify and run **experiment groups**, specify a set of `HP`s in a `HPGroup` (see [scripts/lxconfig.py](scripts/lxconfig.py)). 
+* Use [`lightex.namedconf.argparse_to_command`](lightex/namedconf/config_utils.py) for converting long argparse commands to `Run.cmd` format.
 
 **Note**: Although LightEx pre-defines the dataclass hierarchy, it allows the developer plenty of flexibility in defining the individual fields of classes, in particular, the fields of the `HP` class. 
 
@@ -139,17 +146,6 @@ Both your code and data are mounted on the container (no copying involved) — m
 
 More advanced features are in development stage.
 
-**Modifying, Adding Loggers**
-
-```python
-from lightex.mulogger.trains_logger import TrainsConfig
-Lm = MLFlowConfig(client_in_cluster=False, port=5000)
-L = LoggerConfig(mlflow=Lm, trains=TrainsConfig())
-R1 = Resources(build=..., storage=..., ctr=..., loggers=L)
-```
-
-More loggers and a better plugin system being developed.
-
 **Running Experiments on multiple nodes / servers**
 
 If you've setup a docker `swarm` or `kubernetes` cluster, few changes to the existing config instance allow changing the underlying experiment dispatcher.
@@ -157,6 +153,10 @@ If you've setup a docker `swarm` or `kubernetes` cluster, few changes to the exi
 We need to virtualize code (by adding to Dockerfile) and storage.
 
 Create a shared NFS on your nodes. Switch storage config to the NFS partition. Setup scripts will be added.
+
+**Better QViz module, Logger Plugins**
+
+Improvements to qviz module and a better plugin system for loggers being developed.
 
 **Setup Summary**
 
@@ -173,7 +173,7 @@ While `LightEx` is quick to start with, it is advisable to spend some time under
 
 ### Dependencies
 
-Python > 3.6 (require `dataclasses`, included during install). 
+Python > 3.6 (require `dataclasses`, included during install). Other dependencies defined in [setup.py](setup.py).
 
 
 
@@ -190,7 +190,7 @@ Python > 3.6 (require `dataclasses`, included during install).
 ### References
 
 - ML Experiment Frameworks: [kubeflow](https://github.com/kubeflow/kubeflow), [mlflow](https://www.mlflow.org/docs/latest/index.html), [polyaxon](https://polyaxon.com/), ...
-- Loggers: [sacred](https://sacred.readthedocs.io/en/latest/index.html), [trains](https://github.com/allegroai/trains), [Trixi](https://github.com/MIC-DKFZ/trixi), [ml_logger](https://github.com/episodeyang/ml_logger)
+- Loggers: [sacred](https://sacred.readthedocs.io/en/latest/index.html), [trains](https://github.com/allegroai/trains), [wandb](https://www.wandb.com/),  [Trixi](https://github.com/MIC-DKFZ/trixi), [ml_logger](https://github.com/episodeyang/ml_logger)
 - Motivating Dataclasses [intro](https://blog.jetbrains.com/pycharm/2018/04/python-37-introducing-data-class/), [how-different](https://stackoverflow.com/questions/47955263/what-are-data-classes-and-how-are-they-different-from-common-classes)
 - Flexible configuration
   - in modeling: allennlp, gin, jiant.
@@ -202,7 +202,7 @@ Most current (2019 Q3) tools focus on the *logger* component and provide selecti
 
 
 
-### Yet another experiment framework?
+### Yet Another Experiment Framework
 
 Systematic experimentation tools are essential for a data scientist. Unfortunately, many existing tools (`kubeflow`, `mlflow`, `polyaxon`) are too monolithic, kubernetes-first, cloud-first, target very diverse audiences and hence spread too thin, and yet lack important dev-friendly features. `sacred` 's design is' tightly coupled and requires several `sacred`-specific changes to your main code (plan to add `sacred`logger as backend). Other tools cater only to a specific task , e.g., `tensorboard` only handles log recording and visualization. Also, contrasting different experiment frameworks is hard: there is no standardized expt-management architecture for machine learning and most open-source frameworks are undergoing a process of adhoc requirements discovery. 
 
