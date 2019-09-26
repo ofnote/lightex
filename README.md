@@ -206,6 +206,15 @@ Most current (2019 Q3) tools focus on the *logger* component and provide selecti
 
 Systematic experimentation tools are essential for a data scientist. Unfortunately, many existing tools (`kubeflow`, `mlflow`, `polyaxon`) are too monolithic, kubernetes-first, cloud-first, target very diverse audiences and hence spread too thin, and yet lack important dev-friendly features. `sacred` 's design is' tightly coupled and requires several `sacred`-specific changes to your main code (plan to add `sacred`logger as backend). Other tools cater only to a specific task , e.g., `tensorboard` only handles log recording and visualization. Also, contrasting different experiment frameworks is hard: there is no standardized expt-management architecture for machine learning and most open-source frameworks are undergoing a process of adhoc requirements discovery. 
 
+### Author
+
+Nishant Sinha, [OffNote Labs](http://offnote.co) (nishant@offnote.co, @[medium](https://medium.com/@ekshakhs), @[twitter](https://twitter.com/ekshakhs))
+
+### Contributors
+
+Akarsh E S, [github](https://github.com/AkarshES)
+
+
 
 
 
