@@ -38,7 +38,7 @@ class Run: #options specific to a given run, with some defaults
     run_name: str = ''					# 'ex-8'
     max_cpu: str = "500m"       # half a core
     max_memory: str ="2Gi"      # 2 GB Memory
-    jobid: int = 0
+    ...													# more fields (see lightex/base_config.py)
 
 @dataclass(frozen=True)
 class Resources:

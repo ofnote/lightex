@@ -166,6 +166,7 @@ class MultiLogger():
 
 
 class TerminalLogger(AbstractLogger): #placeholder for now, is this useful?
+    # use loguru (https://github.com/Delgan/loguru)
     name = 'fslogger'
 
     def __init__(self, project_name=None, experiment_name=None, C: TermLogConfig=TermLogConfig()):

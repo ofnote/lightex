@@ -35,19 +35,20 @@ Learn more about the **anatomy** of a ML experimentation framework [here](docs/a
 
 ### Quick Start
 
-Assume we have an existing ML project, with the following model train command:
+Imagine we have an existing ML project, with the following model train command:
 
 > `train.py --data-dir ./data —-lr 0.1 -—hidden_dim 512` 
 
-In the main project directory, initialize `lightex` :
+Now, let us bring in `lightex` to organize and scale experiments for the project. In the main project directory, initialize `lightex` :
 
 > `lx init`                               
 
 This creates files `lxconfig.py` and `run_expts.py`. The file `lxconfig.py` contains pre-defined `dataclass`es for specifying *named* experiment configs.
 
-* The main class `Config`, contains three fields: `er` , `hp` and `run` (see example below), which store configurations for logging and storage resources, hyper-parameters, and runtime, respectively. The nested classes `Resources`, `HP` and `Run` are pre-defined  in `lxconfig.py` (see [config.md](docs/config.md)).
-* `Config` also includes a `get_experiments` function, which generates a list of experiment configs to be executed by the dispatcher. See [config.md](docs/config.md) for full description of the defined dataclasses.
-* To create experiments, we need to create an **instance** of `Config` depending on the project environment and dependencies.
+* The main class `Config`, contains three fields: `er` , `hp` and `run` (see the example below), which store configurations for logging and storage **resources**, **hyper-parameters**, and **runtime**, respectively. 
+* By configuring these three fields (depending on the project environment, parameters), we can *seamlessly* generate multiple experiments via different dispatchers and log the results to one or more logger backends.
+* The config classes `Resources`, `HP` and `Run` for these fields are pre-defined  in `lxconfig.py`. See [config.md](docs/config.md) for full description of the defined dataclasses.
+* `Config` also includes a `get_experiments` function, which generates a list of experiment configs to be executed by the dispatcher. .
 
 ```python
 
@@ -62,22 +63,28 @@ class Config:
         return expts
 ```
 
-For example, here we instantiate class `HP` with actual parameters, and class `Run` to mimic the command with **placeholders**. 
+To create a `Config` instance for our existing project, we instantiate 
+
+* class `HP` with parameter values (`lr` and `hidden_dim`), and 
+* class `Run` 's `cmd` field with the train command **template**. The template refers to `Experiment` objects returned by `get_experiments` function (of this `Config` instance).
+  * Need not create the template manually. Use [`argparse_to_command`](lightex/namedconf/config_utils.py) in your existing code to generate it.
+* class `Resources` with default values (stores experiments in `/tmp/ltex`).
 
 ```python
-cmd="python train.py --data-dir {{run.data_dir}} --lr {{hp.lr}} --hidden_dim {{hp.hidden_dim}}" #placeholders refer to fields of Experiment instance
+cmd="python train.py --data-dir {{run.data_dir}} --lr {{hp.lr}} --hidden_dim {{hp.hidden_dim}}" #template placeholders refer to fields of Experiment instance
 Ru1 = Run(cmd=cmd, experiment_name="find_hp")
 H2 = HP(lr=1e-2, hidden_dim=512)
+R1 = Resources()
 
-C1 = Config(er=R1, hp=H1, run=Ru1) #er defined elsewhere
+C1 = Config(er=R1, hp=H1, run=Ru1)
 ```
 
-Once config named `C1` is defined, run your experiments as follows:
+Once the config instance `C1` is defined, run your experiments as follows:
 
 > python run_expts.py -c C1
 
 
-**That's it!** Now, your experiments, logs, metrics and models are organized and recorded systematically.
+**That's it!** Now, your experiments, logs, metrics and models are executed and recorded systematically.
 
 ------
 
@@ -96,8 +103,9 @@ C2 = replace(C1, hp=H2) #inherit er=R1 and run=Ru1
 
 > python run_expts.py -c C2
 
-* To specify and run **experiment groups**, specify a set of `HP`s in a `HPGroup` (see [scripts/lxconfig.py](scripts/lxconfig.py)). 
-* Use [`lightex.namedconf.argparse_to_command`](lightex/namedconf/config_utils.py) for converting long argparse commands to `Run.cmd` format.
+##### Experiment Groups
+
+We can create multiple similar experiments programmatically and run them in parallel. To specify such **experiment groups**, specify a set of `HP`s in a `HPGroup` and update the `get_experiments` function (see [scripts/lxconfig.py](scripts/lxconfig.py) for an example). In the usual case, these experiments have different hyper-parameters but share `Resources` and `Run` instances.
 
 **Note**: Although LightEx pre-defines the dataclass hierarchy, it allows the developer plenty of flexibility in defining the individual fields of classes, in particular, the fields of the `HP` class. 
 
@@ -204,7 +212,7 @@ Most current (2019 Q3) tools focus on the *logger* component and provide selecti
 
 ### Yet Another Experiment Framework
 
-Systematic experimentation tools are essential for a data scientist. Unfortunately, many existing tools (`kubeflow`, `mlflow`, `polyaxon`) are too monolithic, kubernetes-first, cloud-first, target very diverse audiences and hence spread too thin, and yet lack important dev-friendly features. `sacred` 's design is' tightly coupled and requires several `sacred`-specific changes to your main code (plan to add `sacred`logger as backend). Other tools cater only to a specific task , e.g., `tensorboard` only handles log recording and visualization. Also, contrasting different experiment frameworks is hard: there is no standardized expt-management architecture for machine learning and most open-source frameworks are undergoing a process of adhoc requirements discovery. 
+Systematic experimentation tools are essential for a data scientist. Unfortunately, many existing tools (`kubeflow`, `mlflow`, `polyaxon`) are too monolithic, kubernetes-first, cloud-first, target very diverse audiences and hence spread too thin, and yet lack important dev-friendly features. `sacred` 's design is' tightly coupled and requires several `sacred`-specific changes to your main code. Other tools cater only to a specific task , e.g., `tensorboard` only handles log recording and visualization. Also, contrasting different experiment frameworks is hard: there is no standardized expt-management architecture for machine learning and most open-source frameworks are undergoing a process of adhoc requirements discovery. 
 
 
 

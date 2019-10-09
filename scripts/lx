@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 def task_init():
-    print ('do task init')
+    print ('Initializing LightEx in current directory.')
     file_parent = Path(__file__).resolve().parent
     config_file = file_parent / 'lxconfig.py' 
     run_file = file_parent / 'run_expts.py'
@@ -19,16 +19,23 @@ def task_init():
 
 
 def main(args):
-    if args.init:
+    if args.sub_cmd == 'init':
         task_init()
-    elif args.show:
+    elif args.sub_cmd == 'show':
+        #args.expt
         from lightex.qviz.show import show_all_runs
         show_all_runs()
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser("LightEx CLI")
-    parser.add_argument('--init', const=True, nargs='?', type=bool, default=False)
-    parser.add_argument('show', const=True, nargs='?', type=bool, default=False)
+    commands = parser.add_subparsers(title='LightEx sub-commands', dest="sub_cmd")
+
+    init_parser = commands.add_parser('init')
+
+    show_parser = commands.add_parser('show')
+    show_parser.add_argument('--expt', '-e')
+
     args = parser.parse_args()
+    #print (args)
     main(args)
