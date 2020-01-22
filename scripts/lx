@@ -4,12 +4,17 @@ import argparse
 import shutil
 from pathlib import Path
 
+import site
 
 def task_init():
     print ('Initializing LightEx in current directory.')
-    file_parent = Path(__file__).resolve().parent
-    config_file = file_parent / 'lxconfig.py' 
-    run_file = file_parent / 'run_expts.py'
+    #file_parent = Path(__file__).resolve().parent
+    asset_dir = Path(site.getsitepackages()[0]) / 'lightex' / 'assets' 
+    if not asset_dir.exists():
+        raise ValueError(f'Unable to find asset dir: {asset_dir}')
+
+    config_file = asset_dir / 'lxconfig.py' 
+    run_file = asset_dir / 'run_expts.py'
 
     cwd = Path.cwd()
     shutil.copy2(config_file, cwd)
